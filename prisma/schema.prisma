@@ -3,5 +3,225 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum IncidentInternalStatus {
+  NEW
+  REVIEWING
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum ImportJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum ImportSourceSystem {
+  TELSTRA_CSV
+  MANUAL
+}
+
+// ----------------------------------------------------------------------------
+// A. Core App Tables
+// ----------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Site {
+  id           String     @id @default(uuid())
+  code         String     @unique
+  externalCode String?    @unique
+  name         String
+  region       String?
+  address      String?
+  incidents    Incident[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Device {
+  id        String     @id @default(uuid())
+  name      String
+  incidents Incident[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Incident {
+  id                    String                 @id @default(uuid())
+  externalIncidentId    String?                @unique
+  sourceSystem          ImportSourceSystem     @default(MANUAL)
+  title                 String?
+  description           String?
+  importedFaultSeverity Int?
+  internalStatus        IncidentInternalStatus @default(NEW)
+  
+  siteId                String
+  site                  Site                   @relation(fields: [siteId], references: [id])
+  deviceId              String?
+  device                Device?                @relation(fields: [deviceId], references: [id])
+  
+  importJobId           String?
+  importJob             ImportJob?             @relation(fields: [importJobId], references: [id])
+  importedAt            DateTime?
+
+  logs              IncidentLog[]
+  events            IncidentEventType[]
+  features          IncidentLogFeature[]
+  resources         IncidentResourceType[]
+  severitiesRaw     IncidentSeverityTypeRaw[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([siteId])
+  @@index([internalStatus])
+  @@index([importedFaultSeverity])
+}
+
+model IncidentLog {
+  id         String   @id @default(uuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id])
+  message    String
+  createdAt  DateTime @default(now())
+
+  @@index([incidentId])
+}
+
+model ImportJob {
+  id           String          @id @default(uuid())
+  sourceSystem ImportSourceSystem
+  status       ImportJobStatus @default(PENDING)
+  totalRecords Int             @default(0)
+  errorMessage String?
+  
+  incidents    Incident[]
+  
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ----------------------------------------------------------------------------
+// B. Imported feature tables linked to Incident
+// ----------------------------------------------------------------------------
+
+model IncidentEventType {
+  id         String   @id @default(uuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id])
+  eventType  String
+
+  @@index([incidentId])
+  @@index([eventType])
+}
+
+model IncidentLogFeature {
+  id         String   @id @default(uuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id])
+  logFeature String
+  volume     Int
+
+  @@index([incidentId])
+  @@index([logFeature])
+}
+
+model IncidentResourceType {
+  id           String   @id @default(uuid())
+  incidentId   String
+  incident     Incident @relation(fields: [incidentId], references: [id])
+  resourceType String
+
+  @@index([incidentId])
+  @@index([resourceType])
+}
+
+model IncidentSeverityTypeRaw {
+  id           String   @id @default(uuid())
+  incidentId   String
+  incident     Incident @relation(fields: [incidentId], references: [id])
+  severityType String
+
+  @@index([incidentId])
+  @@index([severityType])
+}
+
+// ----------------------------------------------------------------------------
+// C. Raw tables for production-style ingestion
+// ----------------------------------------------------------------------------
+
+model TelstraTrainRaw {
+  id             String  @id // Original id from train.csv
+  location       String
+  fault_severity Int
+  importJobId    String?
+
+  createdAt DateTime @default(now())
+
+  // Note: we can use `id` here matching external records directly, and indexed inherently by PK.
+}
+
+model TelstraEventTypeRaw {
+  rawId       String   @id @default(uuid())
+  id          String   // Matches train.id
+  event_type  String
+  importJobId String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([id])
+}
+
+model TelstraLogFeatureRaw {
+  rawId       String   @id @default(uuid())
+  id          String   // Matches train.id
+  log_feature String
+  volume      Int
+  importJobId String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([id])
+}
+
+model TelstraResourceTypeRaw {
+  rawId         String   @id @default(uuid())
+  id            String   // Matches train.id
+  resource_type String
+  importJobId   String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([id])
+}
+
+model TelstraSeverityTypeRaw {
+  rawId         String   @id @default(uuid())
+  id            String   // Matches train.id
+  severity_type String
+  importJobId   String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([id])
 }
