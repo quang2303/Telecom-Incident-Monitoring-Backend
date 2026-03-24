@@ -1,0 +1,25 @@
+# Dependency directories
+node_modules/
+
+# Build and IDE
+dist/
+build/
+.nest/
+.vscode/
+
+# Logs and databases
+logs
+*.log
+npm-debug.log*
+yarn-error.log*
+*.sqlite
+
+# Environment variables
+.env
+.env.production
+.env.local
+.env.test
+
+# OS Junk
+.DS_Store
+Thumbs.db
