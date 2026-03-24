@@ -8,7 +8,7 @@ datasource db {
 
 enum UserRole {
   ADMIN
-  USER
+  OPERATOR
 }
 
 enum IncidentInternalStatus {
@@ -35,12 +35,14 @@ enum ImportSourceSystem {
 // ----------------------------------------------------------------------------
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      UserRole @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String?  @unique
+  password     String
+  refreshToken String?
+  role         UserRole @default(OPERATOR)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Site {

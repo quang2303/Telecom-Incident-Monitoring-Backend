@@ -18,6 +18,7 @@ async function main() {
     await prisma.user.create({
       data: {
         email: adminEmail,
+        username: 'admin',
         password: '$2b$10$D/3M/vS.P15HhV1I2/fWeuX9L1i2f9v6jY4rR/LqB1P9VdFv1z/d2', // Valid bcrypt hash for "Admin@123"
         role: UserRole.ADMIN,
       },
