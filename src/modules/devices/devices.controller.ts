@@ -40,7 +40,10 @@ export class DevicesController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a device' })
   @ApiResponse({ status: 200, type: DeviceResponseDto })
-  update(@Param('id') id: string, @Body() updateDeviceDto: UpdateDeviceDto): Promise<DeviceResponseDto> {
+  update(
+    @Param('id') id: string,
+    @Body() updateDeviceDto: UpdateDeviceDto,
+  ): Promise<DeviceResponseDto> {
     return this.devicesService.update(id, updateDeviceDto);
   }
 }

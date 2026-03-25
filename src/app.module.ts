@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { SitesModule } from './modules/sites/sites.module';
 import { DevicesModule } from './modules/devices/devices.module';
+import { IncidentsModule } from './modules/incidents/incidents.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -19,6 +20,7 @@ import { DevicesModule } from './modules/devices/devices.module';
     UsersModule,
     SitesModule,
     DevicesModule,
+    IncidentsModule,
   ],
 })
 export class AppModule {}

@@ -40,10 +40,10 @@ describe('DevicesService', () => {
   describe('create', () => {
     it('should throw ConflictException if device code exists', async () => {
       jest.spyOn(prisma.device, 'findUnique').mockResolvedValue({ id: '1', code: 'DEV-01' } as any);
-      
-      await expect(service.create({ code: 'DEV-01', name: 'Test Device', siteId: '123' }))
-        .rejects
-        .toThrow(ConflictException);
+
+      await expect(
+        service.create({ code: 'DEV-01', name: 'Test Device', siteId: '123' }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });

@@ -18,10 +18,7 @@ export class UsersService {
 
     const existingUser = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          { email },
-          ...(username ? [{ username }] : []),
-        ],
+        OR: [{ email }, ...(username ? [{ username }] : [])],
       },
     });
 
@@ -92,10 +89,7 @@ export class UsersService {
     if (email || username) {
       const existingUser = await this.prisma.user.findFirst({
         where: {
-          OR: [
-            ...(email ? [{ email }] : []),
-            ...(username ? [{ username }] : []),
-          ],
+          OR: [...(email ? [{ email }] : []), ...(username ? [{ username }] : [])],
           NOT: { id },
         },
       });

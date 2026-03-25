@@ -37,10 +37,10 @@ describe('SitesService', () => {
   describe('create', () => {
     it('should throw ConflictException if site code exists', async () => {
       jest.spyOn(prisma.site, 'findUnique').mockResolvedValue({ id: '1', code: 'S-01' } as any);
-      
-      await expect(service.create({ code: 'S-01', name: 'Test Site' }))
-        .rejects
-        .toThrow(ConflictException);
+
+      await expect(service.create({ code: 'S-01', name: 'Test Site' })).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 });
