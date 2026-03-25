@@ -15,7 +15,7 @@ export class AiModule {
           provide: AI_PROVIDER_TOKEN,
           useFactory: (configService: ConfigService) => {
             const providerName = configService.get<string>('AI_PROVIDER', 'mock');
-            // Currently, only 'mock' is implemented. 
+            // Currently, only 'mock' is implemented.
             // In the future, 'openai' or 'gemini' can be instantiated here.
             if (providerName.toLowerCase() === 'mock') {
               return new MockAiProvider();

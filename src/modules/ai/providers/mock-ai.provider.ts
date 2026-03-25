@@ -7,15 +7,13 @@ import {
 
 @Injectable()
 export class MockAiProvider implements IncidentAnalysisProvider {
-  async analyzeIncident(
-    input: AiIncidentInput,
-  ): Promise<IncidentAnalysisResult> {
+  async analyzeIncident(input: AiIncidentInput): Promise<IncidentAnalysisResult> {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     // A simple mock logic based on fault severity
     const faultSeverity = input.importedFaultSeverity || 0;
-    
+
     let priority = 'P3 - Low';
     let category = 'General Network Anomaly';
     let shortSummary = 'Routine log aggregation reported minor anomalies.';
