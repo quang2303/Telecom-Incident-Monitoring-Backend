@@ -8,6 +8,7 @@ import { UsersModule } from './modules/users/users.module';
 import { SitesModule } from './modules/sites/sites.module';
 import { DevicesModule } from './modules/devices/devices.module';
 import { IncidentsModule } from './modules/incidents/incidents.module';
+import { ImportsModule } from './modules/imports/imports.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,6 +22,7 @@ import { IncidentsModule } from './modules/incidents/incidents.module';
     SitesModule,
     DevicesModule,
     IncidentsModule,
+    ImportsModule,
   ],
 })
 export class AppModule {}
