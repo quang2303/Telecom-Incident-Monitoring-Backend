@@ -40,6 +40,7 @@ model User {
   username     String?  @unique
   password     String
   refreshToken String?
+  isActive     Boolean  @default(true)
   role         UserRole @default(OPERATOR)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -53,16 +54,24 @@ model Site {
   region       String?
   address      String?
   incidents    Incident[]
+  devices      Device[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
 
 model Device {
   id        String     @id @default(uuid())
+  code      String     @unique
   name      String
+  type      String?
+  vendor    String?
+  siteId    String
+  site      Site       @relation(fields: [siteId], references: [id])
   incidents Incident[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
+  @@index([siteId])
 }
 
 model Incident {
