@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { validate } from './config/env.validation';
 import { HealthModule } from './modules/health/health.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
@@ -18,6 +20,12 @@ import { AiModule } from './modules/ai/ai.module';
       isGlobal: true,
       validate,
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100, // global limit 100 req/min
+      },
+    ]),
     PrismaModule,
     HealthModule,
     AuthModule,
@@ -28,6 +36,12 @@ import { AiModule } from './modules/ai/ai.module';
     ImportsModule,
     DashboardModule,
     AiModule.forRoot(),
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

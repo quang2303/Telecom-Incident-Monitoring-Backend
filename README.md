@@ -46,3 +46,46 @@ JWT-based authentication with refresh token rotation.
 - `@UseGuards(JwtAuthGuard)` — protect a route with JWT auth
 - `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles(UserRole.ADMIN)` — restrict by role
 - `@CurrentUser()` — extract the authenticated user from the request
+
+## Environment Setup & Operations
+
+1. **Database & Environment**: Copy `.env.example` to `.env` and fill in DB connection strings and secrets.
+   - Note: The application uses `helmet`, `cls-rtracer`, and `rate-limiting` by default.
+   - You can restrict origins using the `CORS_ORIGIN` env variable.
+2. **Migrations**: 
+   ```bash
+   npx prisma migrate dev
+   ```
+   *For production deployment, use `npx prisma migrate deploy`.*
+3. **Seeding Database**:
+   ```bash
+   npx prisma db seed
+   ```
+   *This sets up the default ADMIN user and essential initial data.*
+4. **Running the App**:
+   ```bash
+   npm run start:dev  # development
+   npm run start:prod # production
+   ```
+
+## Example Requests (cURL)
+
+**1. Register an Operator**
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","username":"testuser","password":"Password123!"}'
+```
+
+**2. Login**
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"Password123!"}'
+```
+
+**3. Get Incidents** (Requires standard Bearer token from Login response)
+```bash
+curl -X GET "http://localhost:3000/api/v1/incidents?page=1&limit=10" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```

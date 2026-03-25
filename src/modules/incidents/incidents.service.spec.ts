@@ -3,7 +3,8 @@ import { IncidentsService } from './incidents.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { IncidentInternalStatus } from '@prisma/client';
 import { BadRequestException } from '@nestjs/common';
-
+import { ConfigService } from '@nestjs/config';
+import { AI_PROVIDER_TOKEN } from '../ai/interfaces/incident-analysis-provider.interface';
 const mockPrismaService = {
   incident: {
     findUnique: jest.fn(),
@@ -25,6 +26,14 @@ describe('IncidentsService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn() },
+        },
+        {
+          provide: AI_PROVIDER_TOKEN,
+          useValue: { analyzeIncident: jest.fn() },
         },
       ],
     }).compile();

@@ -1,10 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, VersioningType, BadRequestException } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import helmet from 'helmet';
+import * as rtracer from 'cls-rtracer';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,6 +15,19 @@ async function bootstrap() {
 
   // Global prefixes and versioning
   app.setGlobalPrefix('api');
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
+
+  // Security, request tracking, CORS
+  app.use(helmet());
+  app.use(rtracer.expressMiddleware({ useHeader: true, headerName: 'x-request-id' }));
+  const corsOrigin = configService.get<string>('CORS_ORIGIN', '*');
+  app.enableCors({ origin: corsOrigin === '*' ? '*' : corsOrigin.split(',') });
+
+  // Graceful shutdown
+  app.enableShutdownHooks();
 
   // Global pipes, filters, interceptors
   app.useGlobalPipes(
@@ -20,6 +35,16 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
+      exceptionFactory: (errors) => {
+        const formattedErrors = errors.map((error) => ({
+          field: error.property,
+          errors: Object.values(error.constraints || {}),
+        }));
+        return new BadRequestException({
+          message: 'Validation failed',
+          errors: formattedErrors,
+        });
+      },
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
