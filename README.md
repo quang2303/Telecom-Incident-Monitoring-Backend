@@ -89,3 +89,12 @@ curl -X POST http://localhost:3000/api/v1/auth/login \
 curl -X GET "http://localhost:3000/api/v1/incidents?page=1&limit=10" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
+
+## Continuous Integration (CI)
+
+This repository includes a GitHub Actions workflow for automated testing and linting, ensuring team readiness and code quality.
+
+- **Trigger**: The workflow runs automatically on `push` and `pull_request` to the `main` branch.
+- **Steps**: It executes dependency installation (`npm ci`), linting (`npm run lint`), building (`npm run build`), unit testing (`npm run test`), and E2E testing (`npm run test:e2e`).
+- **Database Strategy**: Instead of requiring live Neon production credentials, the CI spins up a local ephemeral **PostgreSQL 15 container locally**. Prisma pushes the schema directly to this container before running the test suite. This ensures a clean, test-safe, and deterministic environment without risking data leaks.
+- **Secrets & Env**: No secrets are required in the GitHub repository settings for the workflow to pass. Development-safe JWT secrets and an internal database connection URL are provided directly within the workflow environment definition.
