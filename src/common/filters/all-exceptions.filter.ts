@@ -6,6 +6,8 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import * as rtracer from 'cls-rtracer';
+import { Prisma } from '@prisma/client';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -16,22 +18,60 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse();
     const request = ctx.getRequest();
 
-    const status =
-      exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message: any = 'Internal server error';
+    let errorCode = 'INTERNAL_SERVER_ERROR';
 
-    const message =
-      exception instanceof HttpException ? exception.getResponse() : 'Internal server error';
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      message = exception.getResponse();
+      errorCode = 'HTTP_EXCEPTION';
+    } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      if (exception.code === 'P2002') {
+        status = HttpStatus.CONFLICT;
+        message = 'Unique constraint failed';
+        errorCode = 'P2002';
+      } else if (exception.code === 'P2025') {
+        status = HttpStatus.NOT_FOUND;
+        message = 'Record not found';
+        errorCode = 'P2025';
+      } else {
+        message = exception.message;
+        errorCode = exception.code;
+      }
+    } else if (exception instanceof Error) {
+      message = exception.message;
+    }
 
-    this.logger.error(
-      `HTTP Status: ${status} Error Message: ${JSON.stringify(message)}`,
-      exception instanceof Error ? exception.stack : '',
-    );
+    const requestId = rtracer.id();
 
-    response.status(status).json({
+    // Normalize response if message is an object (like BadRequestException)
+
+    const isProduction = process.env.NODE_ENV === 'production';
+    const stack = exception instanceof Error && !isProduction ? exception.stack : undefined;
+
+    const errorDetails =
+      typeof message === 'object' && message !== null ? message : { message: String(message) };
+
+    const responseBody: Record<string, any> = Object.assign({}, errorDetails, {
       statusCode: status,
+      errorCode,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message,
     });
+
+    if (requestId) {
+      responseBody.requestId = requestId;
+    }
+    if (stack) {
+      responseBody.stack = stack;
+    }
+
+    this.logger.error(
+      `[${requestId || 'NO_REQ_ID'}] HTTP ${status} | Path: ${request.url} | Error: ${JSON.stringify(errorDetails)}`,
+      stack,
+    );
+
+    response.status(status).json(responseBody);
   }
 }
