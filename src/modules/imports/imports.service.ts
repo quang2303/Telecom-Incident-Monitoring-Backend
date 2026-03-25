@@ -31,14 +31,12 @@ export class ImportsService {
 
   async processTelstraUpload(uploadedFiles: Express.Multer.File[]) {
     const fileBuffers: Record<string, Buffer> = {};
-    let isZip = false;
 
     // Check if it's a single zip file
     if (
       uploadedFiles.length === 1 &&
       (uploadedFiles[0].originalname.endsWith('.zip') || uploadedFiles[0].mimetype.includes('zip'))
     ) {
-      isZip = true;
       try {
         const extracted = await extractCsvFromZipBuffer(uploadedFiles[0].buffer);
         Object.assign(fileBuffers, extracted);

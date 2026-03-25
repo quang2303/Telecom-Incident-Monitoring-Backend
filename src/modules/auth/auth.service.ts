@@ -113,7 +113,7 @@ export class AuthService {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, refreshToken, ...profile } = user;
+    const { password: _password, refreshToken: _refreshToken, ...profile } = user;
     return profile;
   }
 

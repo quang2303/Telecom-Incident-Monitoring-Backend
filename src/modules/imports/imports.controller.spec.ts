@@ -5,7 +5,6 @@ import { ImportJobStatus, ImportSourceSystem } from '@prisma/client';
 
 describe('ImportsController', () => {
   let controller: ImportsController;
-  let service: ImportsService;
 
   const mockImportsService = {
     processTelstraUpload: jest.fn(),
@@ -25,7 +24,6 @@ describe('ImportsController', () => {
     }).compile();
 
     controller = module.get<ImportsController>(ImportsController);
-    service = module.get<ImportsService>(ImportsService);
   });
 
   it('should be defined', () => {
