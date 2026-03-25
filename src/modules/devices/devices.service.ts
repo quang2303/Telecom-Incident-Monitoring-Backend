@@ -97,7 +97,9 @@ export class DevicesService {
     }
 
     if (updateDeviceDto.siteId && updateDeviceDto.siteId !== device.siteId) {
-      const siteExists = await this.prisma.site.findUnique({ where: { id: updateDeviceDto.siteId } });
+      const siteExists = await this.prisma.site.findUnique({
+        where: { id: updateDeviceDto.siteId },
+      });
       if (!siteExists) {
         throw new NotFoundException('Site not found for the provided siteId');
       }

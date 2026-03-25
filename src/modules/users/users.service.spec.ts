@@ -38,10 +38,10 @@ describe('UsersService', () => {
   describe('create', () => {
     it('should throw ConflictException if user exists', async () => {
       jest.spyOn(prisma.user, 'findFirst').mockResolvedValue({ id: '1' } as any);
-      
-      await expect(service.create({ email: 'test@example.com', password: 'password123' }))
-        .rejects
-        .toThrow(ConflictException);
+
+      await expect(
+        service.create({ email: 'test@example.com', password: 'password123' }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });
