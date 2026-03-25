@@ -41,6 +41,7 @@ JWT-based authentication with refresh token rotation.
 | `JWT_REFRESH_SECRET` | Yes | — | Secret for signing refresh tokens |
 | `JWT_ACCESS_EXPIRES_IN` | No | `15m` | Access token TTL |
 | `JWT_REFRESH_EXPIRES_IN` | No | `7d` | Refresh token TTL |
+| `CORS_ORIGIN` | No | `*` | Allowed CORS origins (comma-separated for multiple, e.g., `http://localhost:3000,https://app.com`) |
 
 ### Guards & Decorators
 - `@UseGuards(JwtAuthGuard)` — protect a route with JWT auth
