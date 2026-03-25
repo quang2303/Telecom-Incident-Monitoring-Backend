@@ -13,14 +13,14 @@ export class AiModule {
       providers: [
         {
           provide: AI_PROVIDER_TOKEN,
-          useFactory: (configService: ConfigService) => {
+          useFactory: async (configService: ConfigService) => {
             const providerName = configService.get<string>('AI_PROVIDER', 'mock');
-            
+
             if (providerName.toLowerCase() === 'gemini') {
-              const { GeminiAiProvider } = require('./providers/gemini-ai.provider');
+              const { GeminiAiProvider } = await import('./providers/gemini-ai.provider');
               return new GeminiAiProvider();
             }
-            
+
             return new MockAiProvider(); // Fallback to mock
           },
           inject: [ConfigService],
