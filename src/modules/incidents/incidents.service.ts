@@ -1,4 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnprocessableEntityException, Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { AI_PROVIDER_TOKEN, IncidentAnalysisProvider, AiIncidentInput } from '../ai/interfaces/incident-analysis-provider.interface';
 import { PrismaService } from '../prisma/prisma.service';
 import { IncidentQueryDto } from './dto/incident-query.dto';
 import { UpdateIncidentStatusDto } from './dto/update-incident-status.dto';
@@ -18,7 +20,12 @@ const VALID_TRANSITIONS: Record<IncidentInternalStatus, IncidentInternalStatus[]
 
 @Injectable()
 export class IncidentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+    @Inject(AI_PROVIDER_TOKEN)
+    private readonly aiProvider: IncidentAnalysisProvider,
+  ) {}
 
   async findAll(query: IncidentQueryDto): Promise<PaginatedResponseDto<any>> {
     const {
@@ -156,5 +163,76 @@ export class IncidentsService {
       where: { incidentId: id },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async getAnalysis(id: string) {
+    const analysis = await this.prisma.incidentAnalysis.findUnique({
+      where: { incidentId: id },
+    });
+    if (!analysis) {
+      throw new NotFoundException(`Analysis for incident ${id} not found`);
+    }
+    return analysis;
+  }
+
+  async analyzeIncident(id: string) {
+    const isAiEnabled = this.configService.get<string>('AI_ENABLED') === 'true';
+    if (!isAiEnabled) {
+      throw new UnprocessableEntityException('AI Analysis is currently disabled by system configuration.');
+    }
+
+    const incident = await this.prisma.incident.findUnique({
+      where: { id },
+      include: {
+        events: true,
+        features: true,
+        resources: true,
+        severitiesRaw: true,
+        site: true,
+      },
+    });
+
+    if (!incident) {
+      throw new NotFoundException(`Incident with ID ${id} not found`);
+    }
+
+    // Explicitly build the typed AI input payload mapped from relational DB rows
+    const input: AiIncidentInput = {
+      incidentId: incident.id,
+      location: incident.site?.name || null,
+      region: incident.site?.region || null,
+      importedFaultSeverity: incident.importedFaultSeverity,
+      eventTypes: incident.events.map((e) => e.eventType),
+      logFeatures: incident.features.map((f) => ({ feature: f.logFeature, volume: f.volume })),
+      resourceTypes: incident.resources.map((r) => r.resourceType),
+      severityTypesRaw: incident.severitiesRaw.map((s) => s.severityType),
+    };
+
+    const aiResult = await this.aiProvider.analyzeIncident(input);
+
+    const savedAnalysis = await this.prisma.incidentAnalysis.upsert({
+      where: { incidentId: incident.id },
+      create: {
+        incidentId: incident.id,
+        category: aiResult.category,
+        suggestedInternalPriority: aiResult.suggestedInternalPriority,
+        shortSummary: aiResult.shortSummary,
+        possibleCause: aiResult.possibleCause,
+        suggestedAction: aiResult.suggestedAction,
+        confidence: aiResult.confidence,
+        rawModel: aiResult.rawModel,
+      },
+      update: {
+        category: aiResult.category,
+        suggestedInternalPriority: aiResult.suggestedInternalPriority,
+        shortSummary: aiResult.shortSummary,
+        possibleCause: aiResult.possibleCause,
+        suggestedAction: aiResult.suggestedAction,
+        confidence: aiResult.confidence,
+        rawModel: aiResult.rawModel,
+      },
+    });
+
+    return savedAnalysis;
   }
 }

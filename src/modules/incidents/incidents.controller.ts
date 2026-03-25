@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Patch, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { IncidentsService } from './incidents.service';
 import { IncidentQueryDto } from './dto/incident-query.dto';
 import { UpdateIncidentStatusDto } from './dto/update-incident-status.dto';
@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from '../../common/decorators/api-paginated-response.decorator';
 import { IncidentResponseDto, IncidentLogResponseDto } from './dto/incident-response.dto';
+import { IncidentAnalysisResponseDto } from './dto/incident-analysis-response.dto';
 
 @ApiTags('Incidents')
 @ApiBearerAuth()
@@ -45,5 +46,19 @@ export class IncidentsController {
   @ApiResponse({ status: 200, type: [IncidentLogResponseDto] })
   findLogs(@Param('id') id: string) {
     return this.incidentsService.findLogs(id);
+  }
+
+  @Post(':id/analyze')
+  @ApiOperation({ summary: 'Run AI analysis on an incident' })
+  @ApiResponse({ status: 201, type: IncidentAnalysisResponseDto })
+  analyzeIncident(@Param('id') id: string) {
+    return this.incidentsService.analyzeIncident(id);
+  }
+
+  @Get(':id/analysis')
+  @ApiOperation({ summary: 'Get the AI analysis for an incident' })
+  @ApiResponse({ status: 200, type: IncidentAnalysisResponseDto })
+  getAnalysis(@Param('id') id: string) {
+    return this.incidentsService.getAnalysis(id);
   }
 }
