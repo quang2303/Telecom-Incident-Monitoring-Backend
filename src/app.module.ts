@@ -10,6 +10,8 @@ import { DevicesModule } from './modules/devices/devices.module';
 import { IncidentsModule } from './modules/incidents/incidents.module';
 import { ImportsModule } from './modules/imports/imports.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { AiModule } from './modules/ai/ai.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,6 +27,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     IncidentsModule,
     ImportsModule,
     DashboardModule,
+    AiModule.forRoot(),
   ],
 })
 export class AppModule {}

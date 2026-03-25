@@ -92,6 +92,8 @@ model Incident {
   importJob             ImportJob?             @relation(fields: [importJobId], references: [id])
   importedAt            DateTime?
 
+  analysis              IncidentAnalysis?
+
   logs              IncidentLog[]
   events            IncidentEventType[]
   features          IncidentLogFeature[]
@@ -236,3 +238,24 @@ model TelstraSeverityTypeRaw {
 
   @@index([id])
 }
+
+// ----------------------------------------------------------------------------
+// D. AI Analysis
+// ----------------------------------------------------------------------------
+
+model IncidentAnalysis {
+  id                        String   @id @default(uuid())
+  incidentId                String   @unique
+  incident                  Incident @relation(fields: [incidentId], references: [id])
+  category                  String
+  suggestedInternalPriority String
+  shortSummary              String
+  possibleCause             String
+  suggestedAction           String
+  confidence                Float?
+  rawModel                  String?
+
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
