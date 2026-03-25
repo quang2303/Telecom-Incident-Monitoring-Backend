@@ -4,7 +4,9 @@ import { validate } from './config/env.validation';
 import { HealthModule } from './modules/health/health.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
-
+import { UsersModule } from './modules/users/users.module';
+import { SitesModule } from './modules/sites/sites.module';
+import { DevicesModule } from './modules/devices/devices.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -14,6 +16,9 @@ import { AuthModule } from './modules/auth/auth.module';
     PrismaModule,
     HealthModule,
     AuthModule,
+    UsersModule,
+    SitesModule,
+    DevicesModule,
   ],
 })
 export class AppModule {}
