@@ -1,6 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException, UnprocessableEntityException, Inject } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+  Inject,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AI_PROVIDER_TOKEN, IncidentAnalysisProvider, AiIncidentInput } from '../ai/interfaces/incident-analysis-provider.interface';
+import {
+  AI_PROVIDER_TOKEN,
+  IncidentAnalysisProvider,
+  AiIncidentInput,
+} from '../ai/interfaces/incident-analysis-provider.interface';
 import { PrismaService } from '../prisma/prisma.service';
 import { IncidentQueryDto } from './dto/incident-query.dto';
 import { UpdateIncidentStatusDto } from './dto/update-incident-status.dto';
@@ -178,7 +188,9 @@ export class IncidentsService {
   async analyzeIncident(id: string) {
     const isAiEnabled = this.configService.get<string>('AI_ENABLED') === 'true';
     if (!isAiEnabled) {
-      throw new UnprocessableEntityException('AI Analysis is currently disabled by system configuration.');
+      throw new UnprocessableEntityException(
+        'AI Analysis is currently disabled by system configuration.',
+      );
     }
 
     const incident = await this.prisma.incident.findUnique({

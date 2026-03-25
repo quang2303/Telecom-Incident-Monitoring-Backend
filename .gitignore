@@ -20,6 +20,14 @@ yarn-error.log*
 .env.local
 .env.test
 
+# Coverage & test output
+coverage/
+result.json
+e2e_result.json
+lint_output.*
+tmp_test.log
+tmp-test-*.ts
+
 # OS Junk
 .DS_Store
 Thumbs.db

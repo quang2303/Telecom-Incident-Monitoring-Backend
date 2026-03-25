@@ -17,13 +17,35 @@ Production-ready NestJS application for the Telecom Incident Monitoring System.
    npm run start:dev
    ```
 
-## Available endpoints
-- `GET /api/health` - API Health check
-- `POST /api/auth/register` - Register a new operator account
-- `POST /api/auth/login` - Login with email/username + password
-- `POST /api/auth/refresh` - Refresh access token
-- `POST /api/auth/logout` - Logout (requires auth)
-- `GET /api/auth/me` - Get current user profile (requires auth)
+## Available endpoints (v1)
+
+### Authentication
+- `POST /api/v1/auth/register` - Register a new operator account
+- `POST /api/v1/auth/login` - Login with email/username + password
+- `POST /api/v1/auth/refresh` - Refresh access token
+- `POST /api/v1/auth/logout` - Logout (requires auth)
+- `GET /api/v1/auth/me` - Get current user profile (requires auth)
+
+### Incidents
+- `GET /api/v1/incidents` - List all incidents with pagination and filtering
+- `GET /api/v1/incidents/:id` - Get incident details
+- `PATCH /api/v1/incidents/:id/status` - Update internal incident status
+
+### Dashboard Analytics
+- `GET /api/v1/dashboard/summary` - Get high-level KPI counts
+- `GET /api/v1/dashboard/incidents-by-status` - Breakdown chart data
+- `GET /api/v1/dashboard/fault-severity-distribution` - Severity chart data
+
+### AI Analysis
+- `GET /api/v1/ai/analysis/:incidentId` - Retrieve stored AI analysis
+- `POST /api/v1/ai/analyze/:incidentId` - Trigger AI analysis (Mock/Real provider)
+
+### Data Ingestion (Telstra Dataset)
+- `POST /api/v1/imports/telstra` - Upload dataset (`.zip` or 5 CSVs) for async background processing
+- `GET /api/v1/imports` - Check import job statuses
+
+### Technical
+- `GET /api/v1/health` - API Health check
 - `GET /docs` - Swagger Documentation UI
 
 ## Authentication
@@ -41,6 +63,7 @@ JWT-based authentication with refresh token rotation.
 | `JWT_REFRESH_SECRET` | Yes | — | Secret for signing refresh tokens |
 | `JWT_ACCESS_EXPIRES_IN` | No | `15m` | Access token TTL |
 | `JWT_REFRESH_EXPIRES_IN` | No | `7d` | Refresh token TTL |
+| `CORS_ORIGIN` | No | `*` | Allowed CORS origins (comma-separated for multiple, e.g., `http://localhost:3000,https://app.com`) |
 
 ### Guards & Decorators
 - `@UseGuards(JwtAuthGuard)` — protect a route with JWT auth
