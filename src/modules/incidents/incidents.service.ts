@@ -4,6 +4,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
   Inject,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -14,6 +15,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { IncidentQueryDto } from './dto/incident-query.dto';
 import { UpdateIncidentStatusDto } from './dto/update-incident-status.dto';
+import { AssignIncidentDto } from './dto/assign-incident.dto';
 import { IncidentInternalStatus, Prisma } from '@prisma/client';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
@@ -37,7 +39,7 @@ export class IncidentsService {
     private readonly aiProvider: IncidentAnalysisProvider,
   ) {}
 
-  async findAll(query: IncidentQueryDto): Promise<PaginatedResponseDto<any>> {
+  async findAll(query: IncidentQueryDto, user?: any): Promise<PaginatedResponseDto<any>> {
     const {
       page = 1,
       limit = 50,
@@ -58,6 +60,10 @@ export class IncidentsService {
       importJobId,
       sourceSystem,
     };
+
+    if (user && user.role === 'TECHNICIAN') {
+      where.assigneeId = user.id;
+    }
 
     if (search) {
       where.OR = [
@@ -131,6 +137,15 @@ export class IncidentsService {
       return incident;
     }
 
+    if (targetStatus === IncidentInternalStatus.RESOLVED) {
+      if (incident.assigneeId !== userId) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId || '' } });
+        if (!user || user.role !== 'ADMIN') {
+          throw new ForbiddenException('Only the assigned technician or an ADMIN can resolve this incident.');
+        }
+      }
+    }
+
     const allowedNextStates = VALID_TRANSITIONS[currentStatus] || [];
     if (!allowedNextStates.includes(targetStatus)) {
       throw new BadRequestException(`Invalid transition from ${currentStatus} to ${targetStatus}`);
@@ -145,6 +160,52 @@ export class IncidentsService {
       let message = `Status updated from ${currentStatus} to ${targetStatus}`;
       if (userId) {
         message += ` by user ${userId}`;
+      }
+
+      await tx.incidentLog.create({
+        data: {
+          incidentId: id,
+          message,
+        },
+      });
+
+      return updated;
+    });
+
+    return updatedIncident;
+  }
+
+  async assignIncident(id: string, dto: AssignIncidentDto, adminOrOperatorId?: string) {
+    const incident = await this.prisma.incident.findUnique({
+      where: { id },
+      include: { device: true },
+    });
+
+    if (!incident) {
+      throw new NotFoundException(`Incident with ID ${id} not found`);
+    }
+
+    const technician = await this.prisma.user.findUnique({
+      where: { id: dto.assigneeId },
+    });
+
+    if (!technician || technician.role !== 'TECHNICIAN') {
+      throw new BadRequestException('Invalid technician ID');
+    }
+
+    if (incident.device && technician.region && incident.device.region && technician.region !== incident.device.region) {
+      throw new BadRequestException('Technician region does not match incident device region');
+    }
+
+    const updatedIncident = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.incident.update({
+        where: { id },
+        data: { assigneeId: dto.assigneeId },
+      });
+
+      let message = `Incident assigned to technician ${technician.email || technician.username}`;
+      if (adminOrOperatorId) {
+        message += ` by user ${adminOrOperatorId}`;
       }
 
       await tx.incidentLog.create({
