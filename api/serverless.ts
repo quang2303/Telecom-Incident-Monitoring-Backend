@@ -49,12 +49,29 @@ async function bootstrap() {
     app.useGlobalFilters(new AllExceptionsFilter());
     app.useGlobalInterceptors(new LoggingInterceptor());
 
+    // Swagger setup for Serverless
+    const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Telecom Incident Monitoring Backend')
+      .setDescription('API documentation for the Telecom Incident Monitoring System')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('docs', app, document);
+
     await app.init();
     cachedApp = app;
   }
 }
 
 export default async function handler(req: any, res: any) {
+  if (req.url === '/') {
+    return res.status(200).json({ status: 'ok', message: 'Telecom Incident Monitoring Backend is running on Vercel' });
+  }
+  
   await bootstrap();
   return server(req, res);
 }
+
