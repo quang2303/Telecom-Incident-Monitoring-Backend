@@ -45,9 +45,55 @@ export class DashboardService {
 
   async getSummary(filter: DashboardFilterDto) {
     const where = this.buildIncidentWhere(filter);
-    const totalIncidents = await this.prisma.incident.count({ where });
+    
+    // Total sites
+    const totalSites = await this.prisma.site.count();
 
-    return { totalIncidents };
+    // Group by status
+    const statusCounts = await this.prisma.incident.groupBy({
+      by: ['internalStatus'],
+      where,
+      _count: {
+        _all: true,
+      },
+    });
+
+    let totalIncidents = 0;
+    let statusNew = 0;
+    let statusReviewing = 0;
+    let statusAcknowledged = 0;
+    let statusResolved = 0;
+
+    statusCounts.forEach((item) => {
+      const count = item._count._all;
+      totalIncidents += count;
+      switch (item.internalStatus) {
+        case 'NEW':
+          statusNew = count;
+          break;
+        case 'REVIEWING':
+          statusReviewing = count;
+          break;
+        case 'ACKNOWLEDGED':
+          statusAcknowledged = count;
+          break;
+        case 'RESOLVED':
+          statusResolved = count;
+          break;
+      }
+    });
+
+    const resolutionRate = totalIncidents > 0 ? Math.round((statusResolved / totalIncidents) * 100) : 0;
+
+    return {
+      totalIncidents,
+      statusNew,
+      statusReviewing,
+      statusAcknowledged,
+      statusResolved,
+      totalSites,
+      resolutionRate,
+    };
   }
 
   async getByStatus(filter: DashboardFilterDto) {
@@ -259,5 +305,63 @@ export class DashboardService {
       byStatus,
       recentJobs,
     };
+  }
+
+  async getVolumeTrend(filter: DashboardFilterDto) {
+    const where = this.buildIncidentWhere(filter);
+    
+    // Calculate date for 7 days ago (in UTC to match Prisma createdAt ISO strings)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setUTCHours(0, 0, 0, 0);
+    sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 6);
+
+    const recentIncidents = await this.prisma.incident.findMany({
+      where: {
+        ...where,
+        createdAt: {
+          gte: sevenDaysAgo,
+        },
+      },
+      select: {
+        createdAt: true,
+        importedFaultSeverity: true,
+        internalStatus: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    // Initialize 7 days array
+    const trendMap = new Map<string, { p1Critical: number; p2High: number; resolved: number }>();
+    
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(sevenDaysAgo);
+        d.setUTCDate(d.getUTCDate() + i);
+        const dateStr = d.toISOString().split('T')[0];
+        trendMap.set(dateStr, { p1Critical: 0, p2High: 0, resolved: 0 });
+    }
+
+    recentIncidents.forEach(incident => {
+        const dateStr = incident.createdAt.toISOString().split('T')[0];
+        const dayData = trendMap.get(dateStr);
+        if (dayData) {
+            if (incident.importedFaultSeverity === 2) {
+                dayData.p1Critical++;
+            } else if (incident.importedFaultSeverity === 1) {
+                dayData.p2High++;
+            }
+            if (incident.internalStatus === 'RESOLVED') {
+                dayData.resolved++;
+            }
+        }
+    });
+
+    return Array.from(trendMap.entries()).map(([date, data]) => ({
+        date,
+        p1Critical: data.p1Critical,
+        p2High: data.p2High,
+        resolved: data.resolved,
+    }));
   }
 }
