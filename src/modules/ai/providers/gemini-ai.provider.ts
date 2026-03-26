@@ -38,7 +38,7 @@ export class GeminiAiProvider implements IncidentAnalysisProvider {
 
       return {
         category: parsed.category || 'Unknown',
-        suggestedInternalPriority: parsed.suggestedInternalPriority || 'MEDIUM',
+        suggestedInternalPriority: 'UNASSIGNED',
         shortSummary: parsed.shortSummary || 'No summary provided',
         possibleCause: parsed.possibleCause || 'Under investigation',
         suggestedAction: parsed.suggestedAction || 'Please manually inspect',
@@ -68,7 +68,6 @@ Context:
 
 Return ONLY a single valid JSON object with the following keys exactly:
 - "category": string (e.g., "Power Failure", "Network Congestion", "Hardware Issue")
-- "suggestedInternalPriority": string ("CRITICAL", "HIGH", "MEDIUM", "LOW")
 - "shortSummary": string (A 1-2 sentence human-readable summary of what likely happened)
 - "possibleCause": string (Explanation of the root cause based on log features and events)
 - "suggestedAction": string (Recommended next step for the field engineer or NOC team)
