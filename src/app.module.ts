@@ -37,6 +37,7 @@ import { WebhookModule } from './modules/webhook/webhook.module';
     ImportsModule,
     DashboardModule,
     AiModule.forRoot(),
+    WebhookModule,
   ],
   providers: [
     {
