@@ -7,6 +7,7 @@ import {
   ChartDataDto,
   SiteChartDataDto,
   ImportJobsSummaryDto,
+  DailyTrendDto,
 } from './dto/dashboard-response.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -82,5 +83,12 @@ export class DashboardController {
   @ApiResponse({ status: 200, type: ImportJobsSummaryDto })
   getImportJobsSummary() {
     return this.dashboardService.getImportJobsSummary();
+  }
+
+  @Get('volume-trend')
+  @ApiOperation({ summary: 'Get 7-day trend of incident volumes by priority' })
+  @ApiResponse({ status: 200, type: [DailyTrendDto] })
+  getVolumeTrend(@Query() filter: DashboardFilterDto) {
+    return this.dashboardService.getVolumeTrend(filter);
   }
 }

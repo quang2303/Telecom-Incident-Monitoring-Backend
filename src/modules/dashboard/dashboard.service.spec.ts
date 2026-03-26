@@ -9,9 +9,11 @@ describe('DashboardService', () => {
     incident: {
       count: jest.fn(),
       groupBy: jest.fn(),
+      findMany: jest.fn(),
     },
     site: {
       findMany: jest.fn(),
+      count: jest.fn(),
     },
     incidentEventType: {
       groupBy: jest.fn(),
@@ -51,11 +53,24 @@ describe('DashboardService', () => {
   });
 
   describe('getSummary', () => {
-    it('should return total incidents', async () => {
-      mockPrismaService.incident.count.mockResolvedValue(100);
+    it('should return total incidents and status breakdown', async () => {
+      mockPrismaService.site.count.mockResolvedValue(5);
+      mockPrismaService.incident.groupBy.mockResolvedValue([
+        { internalStatus: 'NEW', _count: { _all: 50 } },
+        { internalStatus: 'RESOLVED', _count: { _all: 20 } },
+      ]);
       const result = await service.getSummary({});
-      expect(result).toEqual({ totalIncidents: 100 });
-      expect(mockPrismaService.incident.count).toHaveBeenCalled();
+      expect(result).toEqual({
+        totalIncidents: 70,
+        statusNew: 50,
+        statusReviewing: 0,
+        statusAcknowledged: 0,
+        statusResolved: 20,
+        totalSites: 5,
+        resolutionRate: Math.round((20/70)*100),
+      });
+      expect(mockPrismaService.site.count).toHaveBeenCalled();
+      expect(mockPrismaService.incident.groupBy).toHaveBeenCalled();
     });
   });
 

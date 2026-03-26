@@ -3,6 +3,38 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class DashboardSummaryDto {
   @ApiProperty({ description: 'Total number of incidents' })
   totalIncidents: number;
+
+  @ApiProperty({ description: 'Number of NEW incidents' })
+  statusNew: number;
+
+  @ApiProperty({ description: 'Number of REVIEWING incidents' })
+  statusReviewing: number;
+
+  @ApiProperty({ description: 'Number of ACKNOWLEDGED incidents' })
+  statusAcknowledged: number;
+
+  @ApiProperty({ description: 'Number of RESOLVED incidents' })
+  statusResolved: number;
+
+  @ApiProperty({ description: 'Total number of monitored sites' })
+  totalSites: number;
+
+  @ApiProperty({ description: 'Resolution rate percentage (0-100)' })
+  resolutionRate: number;
+}
+
+export class DailyTrendDto {
+  @ApiProperty({ description: 'Date string (YYYY-MM-DD)' })
+  date: string;
+
+  @ApiProperty({ description: 'Number of P1 Critical incidents (Severity 2)' })
+  p1Critical: number;
+
+  @ApiProperty({ description: 'Number of P2 High incidents (Severity 1)' })
+  p2High: number;
+
+  @ApiProperty({ description: 'Number of currently Resolved incidents created on this day' })
+  resolved: number;
 }
 
 export class ChartDataDto {
