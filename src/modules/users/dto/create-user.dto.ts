@@ -21,4 +21,9 @@ export class CreateUserDto {
   @IsEnum(UserRole)
   @IsOptional()
   role?: UserRole;
+
+  @ApiPropertyOptional({ example: 'North Region', description: 'Applicable for TECHNICIAN role' })
+  @IsString()
+  @IsOptional()
+  region?: string;
 }

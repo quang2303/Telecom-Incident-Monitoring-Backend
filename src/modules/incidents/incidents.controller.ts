@@ -7,10 +7,14 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { ApiPaginatedResponse } from '../../common/decorators/api-paginated-response.decorator';
 import { IncidentResponseDto, IncidentLogResponseDto } from './dto/incident-response.dto';
 import { IncidentAnalysisResponseDto } from './dto/incident-analysis-response.dto';
+import { AssignIncidentDto } from './dto/assign-incident.dto';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
 
 @ApiTags('Incidents')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('incidents')
 export class IncidentsController {
   constructor(private readonly incidentsService: IncidentsService) {}
@@ -18,8 +22,8 @@ export class IncidentsController {
   @Get()
   @ApiOperation({ summary: 'List all incidents' })
   @ApiPaginatedResponse(IncidentResponseDto)
-  findAll(@Query() query: IncidentQueryDto) {
-    return this.incidentsService.findAll(query);
+  findAll(@Query() query: IncidentQueryDto, @Req() req: any) {
+    return this.incidentsService.findAll(query, req.user);
   }
 
   @Get(':id')
@@ -39,6 +43,19 @@ export class IncidentsController {
   ) {
     const userId = req.user?.id;
     return this.incidentsService.updateStatus(id, updateIncidentStatusDto, userId);
+  }
+
+  @Patch(':id/assign')
+  @ApiOperation({ summary: 'Assign a technician to an incident (Admin/Operator only)' })
+  @ApiResponse({ status: 200, type: IncidentResponseDto })
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  assignIncident(
+    @Param('id') id: string,
+    @Body() assignIncidentDto: AssignIncidentDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user?.id;
+    return this.incidentsService.assignIncident(id, assignIncidentDto, userId);
   }
 
   @Get(':id/logs')

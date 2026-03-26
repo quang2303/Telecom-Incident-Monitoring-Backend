@@ -21,6 +21,10 @@ export class UserResponseDto {
   role: UserRole;
 
   @Expose()
+  @ApiPropertyOptional()
+  region: string | null;
+
+  @Expose()
   @ApiProperty()
   isActive: boolean;
 

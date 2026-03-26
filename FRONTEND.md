@@ -85,9 +85,12 @@ Tất cả các endpoint phía dưới đều tương đối dựa trên Base UR
   {
     "id": "uuid",
     "externalIncidentId": "1234",
+    "externalIncidentId": "1234",
     "internalStatus": "NEW",
     "importedFaultSeverity": 2,
+    "assigneeId": "uuid-cua-technician",
     "site": { "code": "Location 1", "address": "...", "region": "..." },
+    "device": { "code": "DEV-01", "name": "Switch 01", "region": "Đà Nẵng" },
     "events": [{ "eventType": "type 1" }],
     "features": [{ "logFeature": "feature 10", "volume": 5 }],
     "resources": [{ "resourceType": "resource 2" }],
@@ -104,11 +107,30 @@ Tất cả các endpoint phía dưới đều tương đối dựa trên Base UR
   }
   ```
   *(Các trạng thái hợp lệ: `NEW`, `REVIEWING`, `ACKNOWLEDGED`, `RESOLVED`)*
+  > **Lưu ý Security**: Để chuyển `status` thành `RESOLVED`, người gọi API bắt buộc phải là `ADMIN` hoặc chính là `TECHNICIAN` đang được gán (assigneeId) của Incident này.
+
+### 2.4. Giao việc cho Kỹ thuật viên (Assign Technician)
+- **URL**: `PATCH /api/v1/incidents/:id/assign`
+- **Quyền hạn**: Phải là `ADMIN` hoặc `OPERATOR`.
+- **Logic Validation**: `region` của Technician bắt buộc phải khớp với `region` của `device` gây ra Incident.
+- **Body**:
+  ```json
+  {
+    "assigneeId": "uuid-cua-technician"
+  }
+  ```
 - **Response**: Trả về Object Incident sau khi cập nhật.
 
 ---
+## 3. Quản lý Người Dùng (Users)
 
-## 3. Dashboard Màn Hình Chính
+### 3.1. Lấy danh sách Nhân viên kỹ thuật (Lọc theo Region)
+- **URL**: `GET /api/v1/users?role=TECHNICIAN&region=Đà+Nẵng`
+- **Ý nghĩa**: API hữu ích cho Operator khi đang ở màn hình Assign, muốn load danh sách các kỹ thuật viên phù hợp với khu vực (region) của thiết bị.
+
+---
+
+## 4. Dashboard Màn Hình Chính
 
 Dashboard cung cấp các API trả về mảng đơn giản để vẽ biểu đồ dễ dàng.
 
@@ -118,9 +140,12 @@ Dashboard cung cấp các API trả về mảng đơn giản để vẽ biểu �
   ```json
   {
     "totalIncidents": 7381,
-    "resolvedIncidents": 150,
-    "pendingIncidents": 7231,
-    "totalSites": 929
+    "statusNew": 7000,
+    "statusReviewing": 200,
+    "statusAcknowledged": 31,
+    "statusResolved": 150,
+    "totalSites": 929,
+    "resolutionRate": 2
   }
   ```
 
@@ -142,6 +167,26 @@ Dashboard cung cấp các API trả về mảng đơn giản để vẽ biểu �
     { "label": "0", "value": 5000 },
     { "label": "1", "value": 1500 },
     { "label": "2", "value": 881 }
+  ]
+  ```
+
+### 3.4. Biểu đồ Xu hướng 7 ngày diễn biến Sự cố (Volume Trend)
+- **URL**: `GET /api/v1/dashboard/volume-trend`
+- **Response**: Dùng để vẽ Line/Area Chart (7 ngày gần nhất).
+  ```json
+  [
+    {
+      "date": "2026-03-20",
+      "p1Critical": 5,
+      "p2High": 12,
+      "resolved": 3
+    },
+    {
+      "date": "2026-03-21",
+      "p1Critical": 7,
+      "p2High": 10,
+      "resolved": 5
+    }
   ]
   ```
 

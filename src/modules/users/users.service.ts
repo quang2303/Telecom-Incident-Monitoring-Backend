@@ -14,7 +14,7 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    const { email, username, password, role } = createUserDto;
+    const { email, username, password, role, region } = createUserDto;
 
     const existingUser = await this.prisma.user.findFirst({
       where: {
@@ -34,6 +34,7 @@ export class UsersService {
         username,
         password: hashedPassword,
         role,
+        region,
       },
     });
 
@@ -41,12 +42,13 @@ export class UsersService {
   }
 
   async findAll(query: UserQueryDto): Promise<PaginatedResponseDto<UserResponseDto>> {
-    const { page = 1, limit = 10, role, isActive } = query;
+    const { page = 1, limit = 10, role, isActive, region } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.UserWhereInput = {};
     if (role) where.role = role;
     if (isActive !== undefined) where.isActive = isActive;
+    if (region) where.region = region;
 
     const [total, users] = await Promise.all([
       this.prisma.user.count({ where }),

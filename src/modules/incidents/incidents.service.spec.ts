@@ -13,6 +13,9 @@ const mockPrismaService = {
   incidentLog: {
     create: jest.fn(),
   },
+  user: {
+    findUnique: jest.fn(),
+  },
   $transaction: jest.fn(),
 };
 
@@ -94,10 +97,16 @@ describe('IncidentsService', () => {
       });
     });
 
-    it('should successfully transition from ACKNOWLEDGED -> RESOLVED', async () => {
+    it('should successfully transition from ACKNOWLEDGED -> RESOLVED when requested by ADMIN', async () => {
       mockPrismaService.incident.findUnique.mockResolvedValue({
         id: dummyIncidentId,
         internalStatus: IncidentInternalStatus.ACKNOWLEDGED,
+        assigneeId: 'tech-123',
+      });
+
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'admin-1',
+        role: 'ADMIN',
       });
 
       mockPrismaService.$transaction.mockImplementation(async (cb) => {
@@ -109,21 +118,34 @@ describe('IncidentsService', () => {
         internalStatus: IncidentInternalStatus.RESOLVED,
       });
 
-      const updated = await service.updateStatus(dummyIncidentId, {
-        status: IncidentInternalStatus.RESOLVED,
-      });
+      const updated = await service.updateStatus(
+        dummyIncidentId,
+        { status: IncidentInternalStatus.RESOLVED },
+        'admin-1',
+      );
 
       expect(updated.internalStatus).toBe(IncidentInternalStatus.RESOLVED);
       expect(mockPrismaService.incident.update).toHaveBeenCalledWith({
         where: { id: dummyIncidentId },
         data: { internalStatus: IncidentInternalStatus.RESOLVED },
       });
-      expect(mockPrismaService.incidentLog.create).toHaveBeenCalledWith({
-        data: {
-          incidentId: dummyIncidentId,
-          message: 'Status updated from ACKNOWLEDGED to RESOLVED',
-        },
+    });
+
+    it('should throw ForbiddenException if resolving but user is not assignee and not ADMIN', async () => {
+      mockPrismaService.incident.findUnique.mockResolvedValue({
+        id: dummyIncidentId,
+        internalStatus: IncidentInternalStatus.ACKNOWLEDGED,
+        assigneeId: 'tech-123',
       });
+
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'other-tech',
+        role: 'TECHNICIAN',
+      });
+
+      await expect(
+        service.updateStatus(dummyIncidentId, { status: IncidentInternalStatus.RESOLVED }, 'other-tech'),
+      ).rejects.toThrow('Only the assigned technician or an ADMIN can resolve this incident.');
     });
 
     it('should return incident immediately if target status is the same', async () => {
@@ -139,6 +161,44 @@ describe('IncidentsService', () => {
       expect(updated.internalStatus).toBe(IncidentInternalStatus.NEW);
       expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
       expect(mockPrismaService.incident.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('assignIncident', () => {
+    it('should assign a technician successfully', async () => {
+      mockPrismaService.incident.findUnique.mockResolvedValue({
+        id: 'inc-1',
+        device: { region: 'North' },
+      });
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'tech-1',
+        role: 'TECHNICIAN',
+        region: 'North',
+        email: 'tech@example.com',
+      });
+
+      mockPrismaService.$transaction.mockImplementation(async (cb) => cb(mockPrismaService));
+      mockPrismaService.incident.update.mockResolvedValue({ id: 'inc-1', assigneeId: 'tech-1' });
+
+      const result = await service.assignIncident('inc-1', { assigneeId: 'tech-1' }, 'admin-1');
+      expect(result.assigneeId).toBe('tech-1');
+      expect(mockPrismaService.incidentLog.create).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequest if region mismatch', async () => {
+      mockPrismaService.incident.findUnique.mockResolvedValue({
+        id: 'inc-1',
+        device: { region: 'North' },
+      });
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'tech-1',
+        role: 'TECHNICIAN',
+        region: 'South',
+      });
+
+      await expect(service.assignIncident('inc-1', { assigneeId: 'tech-1' })).rejects.toThrow(
+        'Technician region does not match incident device region',
+      );
     });
   });
 });

@@ -16,7 +16,7 @@ async function main() {
   console.log('Starting seed...');
 
   // Helper to seed a user
-  const seedUser = async (email: string, username: string, plainPassword: string, role: typeof UserRole[keyof typeof UserRole]) => {
+  const seedUser = async (email: string, username: string, plainPassword: string, role: typeof UserRole[keyof typeof UserRole], region?: string) => {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (!existing) {
       const hashedPassword = await bcrypt.hash(plainPassword, 10);
@@ -26,6 +26,7 @@ async function main() {
           username,
           password: hashedPassword,
           role,
+          region,
         },
       });
       console.log(`Created ${role} user: ${email} (Password: ${plainPassword})`);
@@ -38,6 +39,10 @@ async function main() {
   await seedUser('admin@telecom.local', 'admin', 'Admin@123', UserRole.ADMIN);
   await seedUser('operator1@telecom.local', 'operator1', 'Operator@123', UserRole.OPERATOR);
   await seedUser('operator2@telecom.local', 'operator2', 'Operator@123', UserRole.OPERATOR);
+
+  // Seed Technicians
+  await seedUser('tech.north@telecom.local', 'tech_north', 'Tech@123', UserRole.TECHNICIAN, 'North');
+  await seedUser('tech.south@telecom.local', 'tech_south', 'Tech@123', UserRole.TECHNICIAN, 'South');
 
   // Seed Reference Sites
   const sites = [
