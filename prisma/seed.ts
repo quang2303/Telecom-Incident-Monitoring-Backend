@@ -1,32 +1,43 @@
 import { PrismaClient, UserRole } from '@prisma/client';
 import "dotenv/config";
+import * as bcrypt from 'bcrypt';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL || '' });
+const adapter = new PrismaPg(pool as any);
 
 const prisma = new PrismaClient({
+  adapter,
   errorFormat: 'pretty',
-});
+} as any);
 
 async function main() {
   console.log('Starting seed...');
 
-  // Seed Admin User
-  const adminEmail = 'admin@telecom.local';
-  const existingAdmin = await prisma.user.findUnique({
-    where: { email: adminEmail },
-  });
+  // Helper to seed a user
+  const seedUser = async (email: string, username: string, plainPassword: string, role: typeof UserRole[keyof typeof UserRole]) => {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (!existing) {
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      await prisma.user.create({
+        data: {
+          email,
+          username,
+          password: hashedPassword,
+          role,
+        },
+      });
+      console.log(`Created ${role} user: ${email} (Password: ${plainPassword})`);
+    } else {
+      console.log(`User ${email} already exists.`);
+    }
+  };
 
-  if (!existingAdmin) {
-    await prisma.user.create({
-      data: {
-        email: adminEmail,
-        username: 'admin',
-        password: '$2b$10$D/3M/vS.P15HhV1I2/fWeuX9L1i2f9v6jY4rR/LqB1P9VdFv1z/d2', // Valid bcrypt hash for "Admin@123"
-        role: UserRole.ADMIN,
-      },
-    });
-    console.log(`Created admin user: ${adminEmail}`);
-  } else {
-    console.log(`Admin user ${adminEmail} already exists.`);
-  }
+  // Seed Admin & Operators
+  await seedUser('admin@telecom.local', 'admin', 'Admin@123', UserRole.ADMIN);
+  await seedUser('operator1@telecom.local', 'operator1', 'Operator@123', UserRole.OPERATOR);
+  await seedUser('operator2@telecom.local', 'operator2', 'Operator@123', UserRole.OPERATOR);
 
   // Seed Reference Sites
   const sites = [
@@ -59,4 +70,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

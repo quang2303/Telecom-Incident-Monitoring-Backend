@@ -60,7 +60,7 @@ Context:
 - Incident ID: ${input.incidentId}
 - Location: ${input.location || 'Unknown'}
 - Region: ${input.region || 'Unknown'}
-- Imported Fault Severity (0, 1, or 2): ${input.importedFaultSeverity ?? 'Unknown'}
+- Imported Fault Severity: ${input.importedFaultSeverity ?? 'Unknown'} (Note: 0 = Low/No fault, 1 = Medium/Few faults, 2 = High/Critical/Many faults. DO NOT treat 0 as critical).
 - Log Features & Volumes: ${input.logFeatures.map((f) => `${f.feature} (Vol: ${f.volume})`).join(', ') || 'None'}
 - Event Types: ${input.eventTypes.join(', ') || 'None'}
 - Resource Types: ${input.resourceTypes.join(', ') || 'None'}

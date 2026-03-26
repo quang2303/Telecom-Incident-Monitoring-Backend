@@ -13,6 +13,7 @@ import { IncidentsModule } from './modules/incidents/incidents.module';
 import { ImportsModule } from './modules/imports/imports.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AiModule } from './modules/ai/ai.module';
+import { WebhookModule } from './modules/webhook/webhook.module';
 
 @Module({
   imports: [
