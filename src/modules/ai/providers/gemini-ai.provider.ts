@@ -33,7 +33,7 @@ export class GeminiAiProvider implements IncidentAnalysisProvider {
       // Extract JSON from markdown if Gemini includes code blocks
       const jsonMatch = responseText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
       const jsonStr = jsonMatch ? jsonMatch[1] : responseText;
-      
+
       const parsed = JSON.parse(jsonStr) as IncidentAnalysisResult;
 
       return {
