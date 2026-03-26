@@ -2,6 +2,17 @@
 
 Tài liệu này cung cấp **đầy đủ** các endpoint, tham số (request) và hình dạng dữ liệu trả về (response JSON) để team Frontend có thể dựa vào đó xây dựng toàn bộ app mà không bắt buộc phải truy cập Swagger lúc code.
 
+## 0. API Base URL (Cấu hình môi trường)
+
+Tất cả các endpoint phía dưới đều tương đối dựa trên Base URL. Hãy cấu hình Axios/Fetch instance với Base URL sau (Backend đã được deploy trên Vercel):
+
+- **Production API URL**: `https://telecom-incident-monitoring-backend.vercel.app`
+- **Local API URL (nếu có)**: `http://localhost:3000`
+
+*Ví dụ:* Endpoint Đăng nhập thực tế sẽ là `POST https://telecom-incident-monitoring-backend.vercel.app/api/v1/auth/login`
+
+---
+
 ## 1. Authentication (Xác thực)
 
 ### 1.1. Đăng nhập
