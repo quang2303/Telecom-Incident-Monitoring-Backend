@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { IncidentInternalStatus, ImportSourceSystem } from '@prisma/client';
 
 export class IncidentQueryDto {
@@ -11,11 +11,12 @@ export class IncidentQueryDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', default: 50 })
+  @ApiPropertyOptional({ description: 'Items per page', default: 50, maximum: 100 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(100)
   limit?: number = 50;
 
   @ApiPropertyOptional({

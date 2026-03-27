@@ -20,6 +20,16 @@ import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get('assignable-technicians')
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @ApiOperation({ summary: 'List available technicians for assignment (Admin/Operator)' })
+  @ApiPaginatedResponse(UserResponseDto)
+  getAssignableTechnicians(
+    @Query() query: UserQueryDto,
+  ): Promise<PaginatedResponseDto<UserResponseDto>> {
+    return this.usersService.findAll({ ...query, role: UserRole.TECHNICIAN, isActive: true });
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new user (Admin only)' })
   @ApiResponse({ status: 201, type: UserResponseDto })

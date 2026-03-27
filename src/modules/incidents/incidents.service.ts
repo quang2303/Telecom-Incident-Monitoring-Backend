@@ -137,12 +137,12 @@ export class IncidentsService {
       return incident;
     }
 
-    if (targetStatus === IncidentInternalStatus.RESOLVED) {
-      if (incident.assigneeId !== userId) {
-        const user = await this.prisma.user.findUnique({ where: { id: userId || '' } });
-        if (!user || user.role !== 'ADMIN') {
-          throw new ForbiddenException('Only the assigned technician or an ADMIN can resolve this incident.');
-        }
+    if (incident.assigneeId !== userId) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId || '' } });
+      if (!user || user.role !== 'ADMIN') {
+        throw new ForbiddenException(
+          'Only the assigned technician or an ADMIN can update this incident.',
+        );
       }
     }
 
@@ -189,11 +189,16 @@ export class IncidentsService {
       where: { id: dto.assigneeId },
     });
 
-    if (!technician || technician.role !== 'TECHNICIAN') {
-      throw new BadRequestException('Invalid technician ID');
+    if (!technician || technician.role !== 'TECHNICIAN' || !technician.isActive) {
+      throw new BadRequestException('Invalid or inactive technician ID');
     }
 
-    if (incident.device && technician.region && incident.device.region && technician.region !== incident.device.region) {
+    if (
+      incident.device &&
+      technician.region &&
+      incident.device.region &&
+      technician.region !== incident.device.region
+    ) {
       throw new BadRequestException('Technician region does not match incident device region');
     }
 

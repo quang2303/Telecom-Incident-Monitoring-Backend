@@ -111,6 +111,7 @@ describe('AuthService', () => {
       password: 'hashed-password',
       refreshToken: null,
       role: UserRole.OPERATOR,
+      isActive: true,
     };
 
     it('should return tokens on valid credentials', async () => {
