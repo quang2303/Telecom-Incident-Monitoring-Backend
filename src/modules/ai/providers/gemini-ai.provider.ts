@@ -5,13 +5,14 @@ import {
   AiIncidentInput,
   IncidentAnalysisResult,
 } from '../interfaces/incident-analysis-provider.interface';
+import { RagRetrievalService, Runbook } from '../services/rag-retrieval.service';
 
 export class GeminiAiProvider implements IncidentAnalysisProvider {
   private readonly logger = new Logger(GeminiAiProvider.name);
   private genAI: GoogleGenerativeAI;
   private model: any;
 
-  constructor() {
+  constructor(private readonly ragService: RagRetrievalService) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY is not defined in the environment variables');
@@ -24,7 +25,8 @@ export class GeminiAiProvider implements IncidentAnalysisProvider {
   async analyzeIncident(input: AiIncidentInput): Promise<IncidentAnalysisResult> {
     this.logger.log(`Analyzing incident ${input.incidentId} using Gemini 2.5 Flash...`);
 
-    const prompt = this.buildPrompt(input);
+    const relevantRunbooks = this.ragService?.retrieveRelevantRunbooks(input, 3) || [];
+    const prompt = this.buildPrompt(input, relevantRunbooks);
 
     try {
       const result = await this.model.generateContent(prompt);
@@ -51,12 +53,26 @@ export class GeminiAiProvider implements IncidentAnalysisProvider {
     }
   }
 
-  private buildPrompt(input: AiIncidentInput): string {
+  private buildPrompt(input: AiIncidentInput, runbooks: Runbook[] = []): string {
+    let runbookContext = '';
+    if (runbooks.length > 0) {
+      runbookContext = `\n[CRITICAL KNOWLEDGE BASE: HISTORICAL RUNBOOKS]
+Use the following resolved incidents to form a highly accurate "possibleCause" and "suggestedAction". Do not hallucinate steps if a runbook provides exact guidance.
+`;
+      runbooks.forEach((rb, idx) => {
+        runbookContext += `--- Runbook ${idx + 1} ---\n`;
+        runbookContext += `Category: ${rb.category} | Vendor: ${rb.vendor}\n`;
+        runbookContext += `Symptoms: ${rb.symptoms}\n`;
+        runbookContext += `Causes: ${rb.possibleCauses.join(', ')}\n`;
+        runbookContext += `Resolution Steps:\n  ${rb.resolutionSteps.join('\n  ')}\n\n`;
+      });
+    }
+
     return `
 You are an expert telecom network operations center (NOC) engineer assistant.
 Analyze the following raw incident attributes and provide a structured JSON diagnosis.
-
-Context:
+${runbookContext}
+[INCIDENT CONTEXT]
 - Incident ID: ${input.incidentId}
 - Location: ${input.location || 'Unknown'}
 - Region: ${input.region || 'Unknown'}

@@ -67,7 +67,7 @@ describe('DashboardService', () => {
         statusAcknowledged: 0,
         statusResolved: 20,
         totalSites: 5,
-        resolutionRate: Math.round((20/70)*100),
+        resolutionRate: Math.round((20 / 70) * 100),
       });
       expect(mockPrismaService.site.count).toHaveBeenCalled();
       expect(mockPrismaService.incident.groupBy).toHaveBeenCalled();

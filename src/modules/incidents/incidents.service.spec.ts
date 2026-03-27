@@ -66,6 +66,7 @@ describe('IncidentsService', () => {
       mockPrismaService.incident.findUnique.mockResolvedValue({
         id: dummyIncidentId,
         internalStatus: IncidentInternalStatus.NEW,
+        assigneeId: 'user-123',
       });
 
       // Mock $transaction to run the callback
@@ -144,8 +145,12 @@ describe('IncidentsService', () => {
       });
 
       await expect(
-        service.updateStatus(dummyIncidentId, { status: IncidentInternalStatus.RESOLVED }, 'other-tech'),
-      ).rejects.toThrow('Only the assigned technician or an ADMIN can resolve this incident.');
+        service.updateStatus(
+          dummyIncidentId,
+          { status: IncidentInternalStatus.RESOLVED },
+          'other-tech',
+        ),
+      ).rejects.toThrow('Only the assigned technician or an ADMIN can update this incident.');
     });
 
     it('should return incident immediately if target status is the same', async () => {
@@ -175,6 +180,7 @@ describe('IncidentsService', () => {
         role: 'TECHNICIAN',
         region: 'North',
         email: 'tech@example.com',
+        isActive: true,
       });
 
       mockPrismaService.$transaction.mockImplementation(async (cb) => cb(mockPrismaService));
@@ -194,6 +200,7 @@ describe('IncidentsService', () => {
         id: 'tech-1',
         role: 'TECHNICIAN',
         region: 'South',
+        isActive: true,
       });
 
       await expect(service.assignIncident('inc-1', { assigneeId: 'tech-1' })).rejects.toThrow(

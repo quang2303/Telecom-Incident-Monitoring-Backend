@@ -26,19 +26,26 @@ Production-ready NestJS application for the Telecom Incident Monitoring System.
 - `POST /api/v1/auth/logout` - Logout (requires auth)
 - `GET /api/v1/auth/me` - Get current user profile (requires auth)
 
+### Users
+- `GET /api/v1/users/assignable-technicians` - List active technicians for assignment (Operator/Admin)
+
 ### Incidents
 - `GET /api/v1/incidents` - List all incidents with pagination and filtering
 - `GET /api/v1/incidents/:id` - Get incident details
 - `PATCH /api/v1/incidents/:id/status` - Update internal incident status
+
+### Webhook (Telemetry)
+- `POST /api/v1/webhook/telemetry` - Ingest real-time device faults (Requires API Key auth)
 
 ### Dashboard Analytics
 - `GET /api/v1/dashboard/summary` - Get high-level KPI counts
 - `GET /api/v1/dashboard/incidents-by-status` - Breakdown chart data
 - `GET /api/v1/dashboard/fault-severity-distribution` - Severity chart data
 
-### AI Analysis
+### AI Analysis & RAG
 - `GET /api/v1/ai/analysis/:incidentId` - Retrieve stored AI analysis
-- `POST /api/v1/ai/analyze/:incidentId` - Trigger AI analysis (Mock/Real provider)
+- `POST /api/v1/ai/analyze/:incidentId` - Trigger AI analysis using Gemini 2.5 Flash
+- *Note:* Integrates an **In-Memory RAG** (Retrieval-Augmented Generation) module to retrieve historical runbooks and inject them into the LLM context, guaranteeing high-resolution, hallucination-free `suggestedActions` based on actual telecom scenarios.
 
 ### Data Ingestion (Telstra Dataset)
 - `POST /api/v1/imports/telstra` - Upload dataset (`.zip` or 5 CSVs) for async background processing
@@ -47,6 +54,13 @@ Production-ready NestJS application for the Telecom Incident Monitoring System.
 ### Technical
 - `GET /api/v1/health` - API Health check
 - `GET /docs` - Swagger Documentation UI
+
+## Security & Data Integrity
+
+The system enforces strict security and validation paradigms:
+- **Mass Assignment Protection**: Global `ValidationPipe` with `whitelist` and `forbidNonWhitelisted`.
+- **Pagination Limiters**: API requests are stringently capped (e.g., `@Max(100)`) to prevent OOM/DoS attacks via mass retrieval.
+- **Strict Logic Guards**: Enforces rigid Incident lifecycle ownership. Operators cannot assign inactive technicians, and technicians cannot arbitrarily modify incidents they do not own.
 
 ## Authentication
 
